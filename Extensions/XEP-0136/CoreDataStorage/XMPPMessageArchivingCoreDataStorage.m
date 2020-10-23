@@ -446,6 +446,10 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
 		else
 		{
 			XMPPLogVerbose(@"Previous archivedMessage: %@", archivedMessage);
+            
+            if ([self isMessageExist:message.elementID]) {
+                return;
+            }
 			
 			BOOL didCreateNewArchivedMessage = NO;
 			if (archivedMessage == nil)
@@ -472,6 +476,7 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
 			archivedMessage.thread = [[message elementForName:@"thread"] stringValue];
 			archivedMessage.isOutgoing = isOutgoing;
 			archivedMessage.isComposing = isComposing;
+            archivedMessage.elementId = message.elementID;
 			
 			XMPPLogVerbose(@"New archivedMessage: %@", archivedMessage);
 														 
@@ -536,6 +541,39 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
 			}
 		}
 	}];
+}
+
+- (BOOL *)isMessageExist:(NSString *)messageId
+{
+    
+    XMPPMessageArchiving_Message_CoreDataObject *result = nil;
+    NSManagedObjectContext *moc = [self managedObjectContext];
+    
+    NSEntityDescription *messageEntity = [self messageEntity:moc];
+
+    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"elementId == %@",messageId];
+
+    NSSortDescriptor *sortDescriptor = [NSSortDescriptor sortDescriptorWithKey:@"timestamp" ascending:NO];
+
+    NSFetchRequest *fetchRequest = [[NSFetchRequest alloc] init];
+    fetchRequest.entity = messageEntity;
+    fetchRequest.predicate = predicate;
+    fetchRequest.sortDescriptors = @[sortDescriptor];
+    fetchRequest.fetchLimit = 1;
+
+    NSError *error = nil;
+    NSArray *results = [moc executeFetchRequest:fetchRequest error:&error];
+
+    if (results == nil || error || results.count == 0)
+    {
+        return NO;
+    }
+    else
+    {
+        return YES;
+    }
+
+    return NO;
 }
 
 @end
