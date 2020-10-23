@@ -328,7 +328,7 @@ enum XMPPRosterFlags
     __block BOOL result = NO;
 	
 	dispatch_block_t block = ^{
-		result = (self->flags & kHasRoster) ? YES : NO;
+        result = (self->flags & kHasRoster) ? YES : NO;
 	};
 	
 	if (dispatch_get_specific(moduleQueueTag))
@@ -737,10 +737,16 @@ enum XMPPRosterFlags
 		
 		if (!hasRoster)
 		{
-			[self->xmppRosterStorage clearAllUsersAndResourcesForXMPPStream:self->xmppStream];
-			[self _setPopulatingRoster:YES];
+            if ([self autoClearAllUsersAndResources]) {
+                [self->xmppRosterStorage clearAllUsersAndResourcesForXMPPStream:self->xmppStream];
+            }
+			
+            [self _setPopulatingRoster:YES];
 			[self->multicastDelegate xmppRosterDidBeginPopulating:self withVersion:version];
-			[self->xmppRosterStorage beginRosterPopulationForXMPPStream:self->xmppStream withVersion:version];
+            
+            if ([self autoClearAllUsersAndResources]) {
+                [self->xmppRosterStorage beginRosterPopulationForXMPPStream:self->xmppStream withVersion:version];
+            }
 		}
 		
 		NSArray *items = [query elementsForName:@"item"];
